@@ -40,8 +40,12 @@
 <button id="reviveBtn">复活一次失败的图片</button>
 <div id="winnerBanner"></div>
 
-<!-- 背景音乐 -->
-<audio id="bgMusic" src="bgmusic.mp3" loop></audio>
+<!-- 背景音乐（双格式支持） -->
+<audio id="bgMusic" loop>
+  <source src="bgmusic.mp3" type="audio/mpeg">
+  <source src="bgmusic.m4a" type="audio/mp4">
+  你的浏览器不支持播放音频
+</audio>
 
 <!-- 点击音效（可选，如果没上传也不会报错） -->
 <audio id="clickSound"></audio>
@@ -67,23 +71,19 @@ function confettiEffect(count=50){
     conf.className='confetti';
     conf.style.left = Math.random()*100+'vw';
     
-    // 颜色柔和饱和度适中
     conf.style.backgroundColor = `hsl(${Math.random()*360}, 70%, 60%)`;
     
     let size = 5 + Math.random()*10;
     conf.style.width = conf.style.height = size+'px';
     conf.style.opacity = 0.8;
     
-    // 下落速度 2~3.5 秒
     let duration = 2 + Math.random()*1.5;
     conf.style.animationDuration = duration+'s';
     
-    // 轻微旋转
     conf.style.transform = `rotate(${Math.random()*30-15}deg)`;
     
     document.body.appendChild(conf);
     
-    // 柔和消失
     setTimeout(()=>{ 
       conf.style.transition = 'opacity 0.5s';
       conf.style.opacity = 0;
@@ -155,7 +155,6 @@ function selectImage(selectedIdx) {
   winnerImg.style.transform = 'scale(1.2)';
   setTimeout(()=>{ winnerImg.style.transform='scale(1)'; }, 200);
 
-  // ---------- 连胜彩带 10/20/30 ----------
   if([10,20,30].includes(streak)){
       let originalBg = document.body.style.background;
       document.body.style.background = '#fffa66';
@@ -163,7 +162,6 @@ function selectImage(selectedIdx) {
       confettiEffect(80);
   }
 
-  // ---------- 显示复活按钮 ----------
   if(!reviveUsed && lastLoser) {
     document.getElementById('reviveBtn').style.display = 'inline';
   }
@@ -204,7 +202,6 @@ function showChampion(img) {
   banner.appendChild(champImg);
   setTimeout(()=>{ champImg.style.transform='scale(1)'; },100);
 
-  // ---------- 冠军炫彩带 ----------
   confettiEffect(120);
 }
 
