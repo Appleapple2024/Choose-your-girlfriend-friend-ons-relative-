@@ -13,8 +13,14 @@ img:hover{transform:scale(1.06);border-color:hotpink;}
 #reviveBtn{display:none;margin:14px auto;padding:10px 22px;font-size:1em;cursor:pointer;border-radius:20px;border:none;background:linear-gradient(135deg,#ffb6c1,#ffd1dc);}
 .confetti{position:fixed;width:8px;height:8px;top:-10px;z-index:9999;pointer-events:none;animation:fall linear forwards;}
 @keyframes fall{from{transform:translateY(0) rotate(0deg);}to{transform:translateY(100vh) rotate(360deg);}}
-#winnersPoolDiv{position:fixed;bottom:10px;right:10px;width:120px;height:150px;overflow:auto;border:1px solid #ccc;background:#fff;padding:4px;border-radius:8px;text-align:center;}
-#winnersPoolDiv img{width:40px;height:40px;margin:2px;border-radius:6px;border:2px solid gold;}
+.flash {
+  animation: flash 0.5s 6 alternate;
+  border-color: gold !important;
+}
+@keyframes flash {
+  from { box-shadow: 0 0 5px gold; }
+  to { box-shadow: 0 0 20px gold; }
+}
 </style>
 </head>
 <body>
@@ -27,7 +33,6 @@ img:hover{transform:scale(1.06);border-color:hotpink;}
 </div>
 <button id="reviveBtn">等等我反悔了，再给她一次机会 😭</button>
 <div id="winnerBanner"></div>
-<div id="winnersPoolDiv"></div>
 
 <audio id="bgMusic" loop>
   <source src="bgmusic.mp3" type="audio/mpeg">
@@ -37,150 +42,208 @@ img:hover{transform:scale(1.06);border-color:hotpink;}
 <script>
 // ===== 参数 =====
 const totalImages = 70;
-const images = Array.from({length:totalImages},(_,i)=>`${String(i+1).padStart(3,"0")}.jpg`);
+const images = Array.from({length: totalImages}, (_, i) => `${String(i + 1).padStart(3, "0")}.jpg`);
 
-let currentRound = [...images];   // 当前轮待对决
-let nextRound = [];               // 下一轮胜者
+// 状态变量
+let poolA = [...images];           // 未对决过的照片池
+let winnersPool = [];              // 赢家池
 let currentPair = [];
 let lastLoser = null;
 let reviveUsed = false;
-let reviveFlashNext = false;
 let streakPlayer = null;
 let streak = 0;
 let firstClickDone = false;
+let gameState = 'initial';         // 'initial' | 'poolA_vs_poolA' | 'winnersPool_vs_winnersPool' | 'finished'
 
-// DOM
+// DOM元素
 const img1 = document.getElementById('img1');
 const img2 = document.getElementById('img2');
 const status = document.getElementById('status');
 const reviveBtn = document.getElementById('reviveBtn');
 const winnerBanner = document.getElementById('winnerBanner');
-const winnersPoolDiv = document.getElementById('winnersPoolDiv');
 
-// ===== 彩带 =====
-function confettiEffect(count=40){
-  for(let i=0;i<count;i++){
-    const c=document.createElement('div');
-    c.className='confetti';
-    c.style.left=Math.random()*100+'vw';
-    c.style.background=`hsl(${Math.random()*360},70%,65%)`;
-    c.style.animationDuration=(2+Math.random()*1.2)+'s';
+// ===== 彩带效果 =====
+function confettiEffect(count = 40) {
+  for (let i = 0; i < count; i++) {
+    const c = document.createElement('div');
+    c.className = 'confetti';
+    c.style.left = Math.random() * 100 + 'vw';
+    c.style.background = `hsl(${Math.random() * 360}, 70%, 65%)`;
+    c.style.animationDuration = (2 + Math.random() * 1.2) + 's';
     document.body.appendChild(c);
-    setTimeout(()=>c.remove(),3000);
+    setTimeout(() => c.remove(), 3000);
   }
 }
 
 // ===== 背景音乐首次点击 =====
-document.body.addEventListener('click',()=>{
-  if(!firstClickDone){
-    firstClickDone=true;
-    document.getElementById('bgMusic').play().catch(()=>{});
+document.body.addEventListener('click', () => {
+  if (!firstClickDone) {
+    firstClickDone = true;
+    document.getElementById('bgMusic').play().catch(() => {});
     confettiEffect(18);
   }
-},{once:true});
+}, {once: true});
 
-// ===== 更新赢家池显示 =====
-function updateWinnersPoolDisplay(){
-  winnersPoolDiv.innerHTML="";
-  nextRound.forEach(img=>{
-    const el=document.createElement('img');
-    el.src=img;
-    winnersPoolDiv.appendChild(el);
-  });
+// ===== 随机选择两个不同的元素 =====
+function getRandomPair(arr) {
+  if (arr.length < 2) return arr;
+  const idx1 = Math.floor(Math.random() * arr.length);
+  let idx2 = Math.floor(Math.random() * (arr.length - 1));
+  if (idx2 >= idx1) idx2++;
+  return [arr[idx1], arr[idx2]];
 }
 
-// ===== 下一对 =====
-function nextPair(){
-  if(currentRound.length===0){
-    if(nextRound.length===0){ return; }
-    if(nextRound.length===1){ showChampion(nextRound[0]); return; }
-    currentRound=[...nextRound];
-    nextRound=[];
-    updateWinnersPoolDisplay();
-  }
-
-  if(currentRound.length===1){
-    currentPair=[currentRound[0]];
-    img1.src=currentRound[0];
-    img2.style.display='none';
-    status.textContent='最后一眼了，你确定是她吗？';
-    if(reviveFlashNext && currentRound[0]===lastLoser){
-      img1.classList.add('flash');
-      setTimeout(()=>img1.classList.remove('flash'),3000);
-      reviveFlashNext=false;
-    }
+// ===== 更新对决状态 =====
+function updateGameState() {
+  if (poolA.length === 0 && winnersPool.length === 0) {
+    gameState = 'finished';
+  } else if (poolA.length >= 2) {
+    gameState = 'poolA_vs_poolA';
+  } else if (poolA.length === 1 && winnersPool.length > 0) {
+    gameState = 'poolA_vs_winnersPool';
+  } else if (winnersPool.length >= 2) {
+    gameState = 'winnersPool_vs_winnersPool';
+  } else if (winnersPool.length === 1 && poolA.length === 0) {
+    showChampion(winnersPool[0]);
     return;
   }
+  
+  selectNextPair();
+}
 
-  img2.style.display='inline';
-  const a = currentRound.shift();
-  const b = currentRound.shift();
-  currentPair=[a,b];
-  img1.src=a;
-  img2.src=b;
-  status.textContent='别犹豫，你对谁最心动？';
-  if(reviveFlashNext){
-    const flashImg=(a===lastLoser)?img1:(b===lastLoser)?img2:null;
-    if(flashImg){ flashImg.classList.add('flash'); setTimeout(()=>flashImg.classList.remove('flash'),3000); }
-    reviveFlashNext=false;
+// ===== 选择下一对 =====
+function selectNextPair() {
+  if (gameState === 'finished') return;
+  
+  // 根据游戏状态选择不同的对决策略
+  if (gameState === 'poolA_vs_poolA') {
+    // 从未对决过的照片中随机选择两个
+    currentPair = getRandomPair(poolA);
+    status.textContent = `初遇心动 ${poolA.length} 张待选`;
+    
+  } else if (gameState === 'poolA_vs_winnersPool') {
+    // 最后一个未对决照片与赢家池随机一个对决
+    const fromPoolA = poolA[0];
+    const fromWinners = winnersPool[Math.floor(Math.random() * winnersPool.length)];
+    currentPair = [fromPoolA, fromWinners];
+    status.textContent = `新面孔 vs 心动老友`;
+    
+  } else if (gameState === 'winnersPool_vs_winnersPool') {
+    // 赢家池内部对决
+    currentPair = getRandomPair(winnersPool);
+    status.textContent = `强强对决 ${winnersPool.length} 位心动选手`;
+  }
+  
+  // 显示图片
+  img1.src = currentPair[0];
+  img2.src = currentPair[1];
+  img1.style.display = 'inline';
+  img2.style.display = 'inline';
+  
+  // 显示复活按钮
+  if (lastLoser && !reviveUsed) {
+    reviveBtn.style.display = 'inline';
   }
 }
 
 // ===== 点击选择 =====
-function selectImage(idx){
+function selectImage(idx) {
   const winner = currentPair[idx];
-  const loser = currentPair[1-idx];
-  nextRound.push(winner);
-  lastLoser=loser;
-  updateWinnersPoolDisplay();
-
-  // streak
-  if(streakPlayer===winner){ streak++; } 
-  else { streakPlayer=winner; streak=1; }
-  status.textContent=`已经连续 ${streak} 次为她心动了 💓`;
-  if([10,20,30].includes(streak)) confettiEffect(80);
-  if(!reviveUsed) reviveBtn.style.display='inline';
-
-  nextPair();
+  const loser = currentPair[1 - idx];
+  
+  // 更新赢家池
+  if (!winnersPool.includes(winner)) {
+    winnersPool.push(winner);
+  }
+  
+  // 从相应池中移除输家
+  if (poolA.includes(loser)) {
+    poolA = poolA.filter(img => img !== loser);
+  }
+  if (winnersPool.includes(loser)) {
+    winnersPool = winnersPool.filter(img => img !== loser);
+  }
+  
+  // 如果赢家来自poolA，需要移到赢家池并从poolA移除
+  if (poolA.includes(winner)) {
+    poolA = poolA.filter(img => img !== winner);
+  }
+  
+  lastLoser = loser;
+  
+  // 连胜统计
+  if (streakPlayer === winner) {
+    streak++;
+  } else {
+    streakPlayer = winner;
+    streak = 1;
+  }
+  
+  // 连胜彩带
+  if (streak % 10 === 0) {
+    confettiEffect(80);
+    status.textContent = `天呐！已经连续 ${streak} 次为她心动 💘`;
+  } else {
+    status.textContent = `已连续 ${streak} 次选择她 💓`;
+  }
+  
+  // 更新游戏状态并准备下一对
+  updateGameState();
 }
 
 // ===== 复活按钮 =====
-reviveBtn.onclick=()=>{
-  if(lastLoser && !reviveUsed){
-    currentRound.unshift(lastLoser);
-    reviveUsed=true;
-    reviveBtn.style.display='none';
-    reviveFlashNext=true;
-    status.textContent='行吧，这次算你心软 😌';
+reviveBtn.onclick = () => {
+  if (lastLoser && !reviveUsed) {
+    // 将上一轮的输家放回poolA
+    poolA.push(lastLoser);
+    reviveUsed = true;
+    reviveBtn.style.display = 'none';
+    
+    // 高亮显示复活的人
+    status.textContent = '她带着你的心意回来了 💖';
     confettiEffect(12);
+    
+    // 如果复活的人正好在当前对决中，高亮显示
+    if (currentPair.includes(lastLoser)) {
+      const flashImg = currentPair[0] === lastLoser ? img1 : img2;
+      flashImg.classList.add('flash');
+      setTimeout(() => flashImg.classList.remove('flash'), 3000);
+    }
   }
 }
 
-// ===== 冠军 =====
-function showChampion(img){
-  img1.style.display='none';
-  img2.style.display='none';
-  reviveBtn.style.display='none';
-  status.style.display='none';
-  winnersPoolDiv.style.display='none';
-  winnerBanner.style.display='block';
-  winnerBanner.innerHTML='🎉 原来她一直都是你的心选姐 🎉<br>';
-  const c=document.createElement('img');
-  c.src=img;
-  c.style.maxWidth='55%';
-  c.style.border='6px solid gold';
-  c.style.borderRadius='18px';
-  winnerBanner.appendChild(c);
-  confettiEffect(120);
+// ===== 显示冠军 =====
+function showChampion(img) {
+  gameState = 'finished';
+  img1.style.display = 'none';
+  img2.style.display = 'none';
+  reviveBtn.style.display = 'none';
+  status.style.display = 'none';
+  
+  winnerBanner.style.display = 'block';
+  winnerBanner.innerHTML = `
+    <div style="margin-bottom:20px;">
+      🎉 最终胜出！她就是你的心选 🎉
+    </div>
+    <div>
+      <img src="${img}" style="max-width:55%; border:6px solid gold; border-radius:18px;">
+    </div>
+    <div style="margin-top:20px; font-size:0.8em;">
+      连胜记录：${streak} 次
+    </div>
+  `;
+  
+  // 冠军彩带
+  confettiEffect(150);
+  document.getElementById('bgMusic').pause();
 }
 
-// ===== 绑定点击 =====
-img1.onclick=()=>selectImage(0);
-img2.onclick=()=>selectImage(1);
+// ===== 绑定点击事件 =====
+img1.onclick = () => selectImage(0);
+img2.onclick = () => selectImage(1);
 
-// ===== 启动 =====
-nextPair();
+// ===== 启动游戏 =====
+updateGameState();
 </script>
-
 </body>
 </html>
