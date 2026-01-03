@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="UTF-8">
+<title>你更喜欢谁 · 娱乐淘汰制</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<style>
+  body {
+    margin: 0;
+    font-family: system-ui, -apple-system;
+    background: #0f0f0f;
+    color: #fff;
+    text-align: center;
+  }
+  h1, h2 { font-weight: 600; }
+  #arena img {
+    width: 42vw;
+    max-width: 320px;
+    margin: 10px;
+    border-radius: 14px;
+    cursor: pointer;
+    transition: transform 0.2s;
+  }
+  #arena img:hover { transform: scale(1.05); }
+  button {
+    background: #fff;
+    color: #000;
+    border: none;
+    padding: 10px 16px;
+    border-radius: 10px;
+    font-size: 15px;
+    cursor: pointer;
+    margin: 6px;
+  }
+  #footer {
+    font-size: 12px;
+    opacity: 0.6;
+    margin: 20px;
+  }
+</style>
+</head>
+
+<body>
+
+<h2 id="status">请选择你更喜欢的</h2>
+
+<div>
+  <input type="file" id="uploader" multiple accept="image/*">
+</div>
+
+<div id="arena"></div>
+<div id="controls"></div>
+
+<div id="footer">
+  本网站仅供娱乐。默认图片由站点提供，用户上传图片仅在本地浏览器中使用，不会被保存或上传。
+</div>
+
+<script>
+/* ====== 1. 默认图片（70 张） ====== */
+const defaultImages = Array.from({length:70}, (_,i) =>
+  `images/${String(i+1).padStart(3,"0")}.jpg`
+);
+
+/* ====== 2. 用户图片 ====== */
+let userImages = [];
+
+/* ====== 3. 游戏状态 ====== */
+let pool = [...defaultImages];
+let lastEliminated = null;
+let reviveUsed = false;
+let streakOwner = null;
+let streakCount = 0;
+
+/* ====== 4. 上传处理 ====== */
+document.getElementById("uploader").addEventListener("change", e => {
+  const files = Array.from(e.target.files);
+  files.forEach(file => {
+    const url = URL.createObjectURL(file);
+    userImages.push(url);
+    pool.push(url);
+  });
+});
+
+/* ====== 5. 主流程 ====== */
+function nextRound() {
+  const arena = document.getElementById("arena");
+  const controls = document.getElementById("controls");
+  arena.innerHTML = "";
+  controls.innerHTML = "";
+
+  if (pool.length === 1) {
+    showChampion(pool[0]);
+    return;
+  }
+
+  shuffle(pool);
+  const a = pool[0];
+  const b = pool[1];
+
+  [a, b].forEach(img => {
+    const el = document.createElement("img");
+    el.src = img;
+    el.onclick = () => choose(img, img === a ? b : a);
+    arena.appendChild(el);
+  });
+
+  if (!reviveUsed && lastEliminated) {
+    const btn = document.createElement("button");
+    btn.innerText = "🔁 复活一次";
+    btn.onclick = revive;
+    controls.appendChild(btn);
+  }
+}
+
+/* ====== 6. 选择逻辑 ====== */
+function choose(winner, loser) {
+  if (pool.length === 2) {
+    if (!confirm("⚠️ 这是最后的选择了，你确定吗？")) return;
+  }
+
+  if (streakOwner === winner) {
+    streakCount++;
+  } else {
+    streakOwner = winner;
+    streakCount = 1;
+  }
+
+  updateStatus();
+
+  lastEliminated = loser;
+  pool = pool.filter(i => i !== loser);
+  nextRound();
+}
+
+/* ====== 7. 连胜提示 ====== */
+function updateStatus() {
+  const s = document.getElementById("status");
+  if (streakCount === 2) s.innerText = "✨ 有点东西";
+  else if (streakCount === 3) s.innerText = "🔥 她杀疯了";
+  else if (streakCount >= 5) s.innerText = "👑 统治级";
+  else s.innerText = "请选择你更喜欢的";
+}
+
+/* ====== 8. 复活 ====== */
+function revive() {
+  reviveUsed = true;
+  pool.push(lastEliminated);
+  lastEliminated = null;
+  nextRound();
+}
+
+/* ====== 9. 冠军海报 ====== */
+function showChampion(img) {
+  document.body.innerHTML = `
+    <h1>👑 冠军生存 👑</h1>
+    <img src="${img}" style="width:70vw;max-width:380px;border-radius:16px">
+    <p>她赢到了最后。</p>
+  `;
+}
+
+/* ====== 工具 ====== */
+function shuffle(arr) {
+  for (let i = arr.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [arr[i], arr[j]] = [arr[j], arr[i]];
+  }
+}
+
+/* ====== 启动 ====== */
+nextRound();
+</script>
+
+</body>
+</html>
