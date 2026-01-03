@@ -34,16 +34,16 @@ img:hover{transform:scale(1.06);border-color:hotpink;}
 </audio>
 
 <script>
-// ===== 参数 =====
-const defaultImages = Array.from({length:10},(_,i)=>`${String(i+1).padStart(3,"0")}.jpg`); // 测试用10张图片
-let currentRound = [...defaultImages]; // 当前轮队列
-let nextRound = [];                     // 下一轮队列
+// ===== 参赛者列表 =====
+const defaultImages = Array.from({length:70},(_,i)=>`${String(i+1).padStart(3,"0")}.jpg`);
+let pool = [...defaultImages];       // 本轮未对决参赛者
+let winnersPool = [];                 // 胜者池
+let currentPair = [];
 let lastLoser = null;
 let reviveUsed = false;
 let reviveFlashNext = false;
 let streak = 0;
 let streakPlayer = null;
-let currentPair = [];
 let firstClickDone = false;
 
 // ===== 彩带 =====
@@ -70,27 +70,25 @@ document.body.addEventListener('click',()=>{
 
 // ===== 下一对 =====
 function nextPair(){
-  if(currentRound.length===0){
-    if(nextRound.length===1){
-      showChampion(nextRound[0]);
+  if(pool.length===0){
+    // 阶段1结束，开始赢家池对决
+    if(winnersPool.length>1){
+      pool = [...winnersPool];
+      winnersPool = [];
+    } else if(winnersPool.length===1){
+      // 冠军产生
+      showChampion(winnersPool[0]);
       return;
     }
-    if(nextRound.length===0){
-      status.textContent='比赛结束？';
-      return;
-    }
-    // 进入下一轮
-    currentRound = [...nextRound];
-    nextRound = [];
   }
 
-  // 如果只剩一人轮空
-  if(currentRound.length===1){
-    currentPair = [currentRound[0]];
-    img1.src=currentRound[0];
+  // 如果只剩一个人轮空
+  if(pool.length===1){
+    currentPair = [pool[0]];
+    img1.src = pool[0];
     img2.style.display='none';
-    status.textContent='最后一眼了，你确定是她吗？';
-    if(reviveFlashNext && currentRound[0]===lastLoser){
+    status.textContent = '最后一眼了，你确定是她吗？';
+    if(reviveFlashNext && pool[0]===lastLoser){
       img1.classList.add('flash');
       setTimeout(()=>img1.classList.remove('flash'),3000);
       reviveFlashNext=false;
@@ -100,14 +98,13 @@ function nextPair(){
 
   // 正常两人对决
   img2.style.display='inline';
-  const a = currentRound.shift();
-  const b = currentRound.shift();
-  currentPair=[a,b];
-  img1.src=a;
-  img2.src=b;
-  status.textContent='别犹豫，你对谁最心动？';
+  const a = pool.shift();
+  const b = pool.shift();
+  currentPair = [a,b];
+  img1.src = a;
+  img2.src = b;
+  status.textContent = '别犹豫，你对谁最心动？';
 
-  // 复活闪烁提示
   if(reviveFlashNext){
     const flashImg = (a===lastLoser)? img1 : (b===lastLoser)? img2 : null;
     if(flashImg){
@@ -122,8 +119,7 @@ function nextPair(){
 function selectImage(idx){
   const winner = currentPair[idx];
   const loser = currentPair[1-idx];
-
-  nextRound.push(winner); // 胜者进入下一轮
+  winnersPool.push(winner); // 胜者进入赢家池
   lastLoser = loser;
 
   // streak 记录同一个人连续胜利次数
@@ -133,6 +129,7 @@ function selectImage(idx){
     streak=1;
     streakPlayer=winner;
   }
+
   status.textContent=`已经连续 ${streak} 次为她心动了 💓`;
   if([10,20,30].includes(streak)) confettiEffect(80);
   if(!reviveUsed) reviveBtn.style.display='inline';
@@ -143,7 +140,7 @@ function selectImage(idx){
 // ===== 复活按钮 =====
 reviveBtn.onclick = ()=>{
   if(lastLoser && !reviveUsed){
-    currentRound.unshift(lastLoser); // 优先出场
+    pool.unshift(lastLoser); // 优先出场
     reviveUsed=true;
     reviveBtn.style.display='none';
     reviveFlashNext=true;
@@ -160,8 +157,8 @@ function showChampion(img){
   status.style.display='none';
   winnerBanner.style.display='block';
   winnerBanner.innerHTML='🎉 原来她一直都是你的心选姐 🎉<br>';
-  const c=document.createElement('img');
-  c.src=img;
+  const c = document.createElement('img');
+  c.src = img;
   c.style.maxWidth='55%';
   c.style.border='6px solid gold';
   c.style.borderRadius='18px';
