@@ -4,11 +4,30 @@
 <meta charset="UTF-8">
 <title>淘汰图片游戏</title>
 <style>
-  body { font-family: sans-serif; text-align: center; background: #f9f9f9; }
-  img { max-width: 45%; margin: 1%; cursor: pointer; border: 3px solid #ccc; border-radius: 10px; }
+  body { font-family: sans-serif; text-align: center; background: #f9f9f9; overflow-x: hidden; }
+  img { max-width: 45%; margin: 1%; cursor: pointer; border: 3px solid #ccc; border-radius: 10px; transition: all 0.3s; }
+  img:hover { transform: scale(1.05); border-color: gold; }
   #winnerBanner { font-size: 2em; color: red; margin-top: 20px; display:none; }
   #status { margin: 20px; font-size: 1.2em; }
-  #reviveBtn { display: none; margin: 10px auto; padding: 10px 20px; font-size: 1em; cursor: pointer; }
+  #reviveBtn { display: none; margin: 10px auto; padding: 10px 20px; font-size: 1em; cursor: pointer; animation: blink 1s infinite; }
+  @keyframes blink {
+    0%,100% {background-color:#ffcccc;}
+    50% {background-color:#ffeeaa;}
+  }
+  .confetti {
+    position: fixed;
+    width: 10px;
+    height: 10px;
+    top: -10px;
+    z-index: 9999;
+    opacity: 0.8;
+    pointer-events: none;
+    animation: fall 3s linear forwards;
+  }
+  @keyframes fall {
+    0% {transform: rotate(0deg) translateY(0);}
+    100% {transform: rotate(360deg) translateY(100vh);}
+  }
 </style>
 </head>
 <body>
@@ -21,40 +40,39 @@
 <button id="reviveBtn">复活一次失败的图片</button>
 <div id="winnerBanner"></div>
 
+<!-- 背景音乐 -->
+<audio id="bgMusic" src="bgmusic.mp3" loop></audio>
+<!-- 点击音效 -->
+<audio id="clickSound" src="click.mp3"></audio>
+
 <script>
 // ----------- 默认图片数组（根目录单张图片） -----------
 const defaultImages = Array.from({length:70}, (_,i) =>
   `${String(i+1).padStart(3,"0")}.jpg`
 );
 
-// 当前比赛池
 let pool = [...defaultImages];
-
-// 胜者池
 let winners = [];
-
-// 当前连胜计数
 let streak = 0;
-
-// 当前两张图片
 let currentPair = [];
-
-// 上一次失败的图片（用于复活）
 let lastLoser = null;
-
-// 是否复活机会已用
 let reviveUsed = false;
 
-// 选择下一对图片
+// 播放背景音乐（iPad 需要用户操作才能开始）
+function startMusic() {
+  const bg = document.getElementById('bgMusic');
+  bg.play().catch(()=>console.log("点击开始音乐"));
+}
+document.body.onclick = startMusic;
+
+// 随机生成下一对图片
 function nextPair() {
   if(pool.length === 0 && winners.length === 1) {
-    // 冠军出现
     showChampion(winners[0]);
     return;
   }
 
   if(pool.length === 0) {
-    // 池空了，使用胜者池继续
     pool = [...winners];
     winners = [];
   }
@@ -69,7 +87,6 @@ function nextPair() {
     document.getElementById('img2').style.display = 'inline';
   }
 
-  // 随机选择两张
   let idx1 = Math.floor(Math.random() * pool.length);
   let img1 = pool.splice(idx1,1)[0];
   let idx2 = Math.floor(Math.random() * pool.length);
@@ -81,17 +98,52 @@ function nextPair() {
   document.getElementById('status').textContent = `点击你喜欢的图片`;
 }
 
+// 彩带特效
+function confettiEffect(count=30){
+  for(let i=0;i<count;i++){
+    const conf = document.createElement('div');
+    conf.className='confetti';
+    conf.style.left = Math.random()*100+'vw';
+    conf.style.backgroundColor = `hsl(${Math.random()*360}, 80%, 60%)`;
+    conf.style.width = conf.style.height = (5+Math.random()*10)+'px';
+    document.body.appendChild(conf);
+    setTimeout(()=>conf.remove(),3000);
+  }
+}
+
 // 点击选择
 function selectImage(selectedIdx) {
+  document.getElementById('clickSound').play();
+
   let winner = currentPair[selectedIdx];
   let loser = currentPair[1 - selectedIdx];
 
   winners.push(winner);
   streak++;
   lastLoser = loser;
-  document.getElementById('status').textContent = `连胜: ${streak}`;
 
-  // 显示复活按钮（仅一次机会）
+  const statusEl = document.getElementById('status');
+  statusEl.textContent = `连胜: ${streak}`;
+  statusEl.style.color = ['red','orange','green','blue','purple'][streak%5];
+
+  // 胜者缩放动画
+  const winnerImg = selectedIdx === 0 ? document.getElementById('img1') : document.getElementById('img2');
+  winnerImg.style.transform = 'scale(1.2)';
+  setTimeout(()=>{ winnerImg.style.transform='scale(1)'; }, 200);
+
+  // 彩带效果
+  confettiEffect(20);
+
+  // 连胜彩蛋
+  if([10,20,30].includes(streak)){
+      let originalBg = document.body.style.background;
+      document.body.style.background = '#fffa66';
+      setTimeout(()=>{document.body.style.background = originalBg},200);
+      confettiEffect(50);
+      confettiEffect(50);
+  }
+
+  // 显示复活按钮
   if(!reviveUsed && lastLoser) {
     document.getElementById('reviveBtn').style.display = 'inline';
   }
@@ -106,6 +158,7 @@ document.getElementById('reviveBtn').onclick = function() {
     reviveUsed = true;
     this.style.display = 'none';
     document.getElementById('status').textContent = `复活成功！继续游戏，连胜: ${streak}`;
+    confettiEffect(10);
   }
 }
 
@@ -125,8 +178,14 @@ function showChampion(img) {
   champImg.style.maxWidth = '50%';
   champImg.style.border = '5px solid gold';
   champImg.style.borderRadius = '15px';
+  champImg.style.transform='scale(0)';
+  champImg.style.transition='transform 0.5s';
   banner.appendChild(document.createElement('br'));
   banner.appendChild(champImg);
+  setTimeout(()=>{ champImg.style.transform='scale(1)'; },100);
+
+  // 冠军彩带庆祝
+  confettiEffect(50);
 }
 
 // 绑定点击
