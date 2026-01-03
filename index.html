@@ -15,6 +15,8 @@ img:hover{transform:scale(1.06);border-color:hotpink;}
 @keyframes fall{from{transform:translateY(0) rotate(0deg);} to{transform:translateY(100vh) rotate(360deg);}}
 .flash{animation:flashAnim 1s ease 0s 3;}
 @keyframes flashAnim{0%,100%{opacity:1;}50%{opacity:0;}}
+#winnersPoolDiv{position:fixed;bottom:10px;right:10px;width:120px;height:150px;overflow:auto;border:1px solid #ccc;background:#fff;padding:4px;border-radius:8px;text-align:center;}
+#winnersPoolDiv img{width:40px;height:40px;margin:2px;border-radius:6px;border:2px solid gold;}
 </style>
 </head>
 <body>
@@ -27,6 +29,7 @@ img:hover{transform:scale(1.06);border-color:hotpink;}
 </div>
 <button id="reviveBtn">等等我反悔了，再给她一次机会 😭</button>
 <div id="winnerBanner"></div>
+<div id="winnersPoolDiv"></div>
 
 <audio id="bgMusic" loop>
   <source src="bgmusic.mp3" type="audio/mpeg">
@@ -36,8 +39,8 @@ img:hover{transform:scale(1.06);border-color:hotpink;}
 <script>
 // ===== 参赛者列表 =====
 const defaultImages = Array.from({length:70},(_,i)=>`${String(i+1).padStart(3,"0")}.jpg`);
-let pool = [...defaultImages];       // 本轮未对决参赛者
-let winnersPool = [];                 // 胜者池
+let pool = [...defaultImages];       // 当前轮未对决参赛者
+let nextRoundQueue = [];             // 当前轮胜者队列
 let currentPair = [];
 let lastLoser = null;
 let reviveUsed = false;
@@ -45,6 +48,7 @@ let reviveFlashNext = false;
 let streak = 0;
 let streakPlayer = null;
 let firstClickDone = false;
+let winnersPoolDiv = document.getElementById("winnersPoolDiv");
 
 // ===== 彩带 =====
 function confettiEffect(count=40){
@@ -59,7 +63,7 @@ function confettiEffect(count=40){
   }
 }
 
-// ===== 第一次点击 =====
+// ===== 背景音乐首次点击 =====
 document.body.addEventListener('click',()=>{
   if(!firstClickDone){
     firstClickDone=true;
@@ -68,26 +72,39 @@ document.body.addEventListener('click',()=>{
   }
 },{once:true});
 
+// ===== 更新赢家池显示 =====
+function updateWinnersPoolDisplay(){
+  winnersPoolDiv.innerHTML="";
+  nextRoundQueue.forEach(img=>{
+    const el = document.createElement('img');
+    el.src=img;
+    winnersPoolDiv.appendChild(el);
+  });
+}
+
 // ===== 下一对 =====
 function nextPair(){
+  // 阶段切换：如果 pool 空且下一轮胜者队列人数 >1，把胜者队列变成 pool
   if(pool.length===0){
-    // 阶段1结束，开始赢家池对决
-    if(winnersPool.length>1){
-      pool = [...winnersPool];
-      winnersPool = [];
-    } else if(winnersPool.length===1){
-      // 冠军产生
-      showChampion(winnersPool[0]);
+    if(nextRoundQueue.length===0){
+      status.textContent="比赛结束？";
       return;
     }
+    if(nextRoundQueue.length===1){
+      showChampion(nextRoundQueue[0]);
+      return;
+    }
+    pool = [...nextRoundQueue];
+    nextRoundQueue = [];
+    updateWinnersPoolDisplay();
   }
 
-  // 如果只剩一个人轮空
+  // 如果 pool 只剩一个轮空者
   if(pool.length===1){
     currentPair = [pool[0]];
-    img1.src = pool[0];
+    img1.src=pool[0];
     img2.style.display='none';
-    status.textContent = '最后一眼了，你确定是她吗？';
+    status.textContent='最后一眼了，你确定是她吗？';
     if(reviveFlashNext && pool[0]===lastLoser){
       img1.classList.add('flash');
       setTimeout(()=>img1.classList.remove('flash'),3000);
@@ -101,9 +118,9 @@ function nextPair(){
   const a = pool.shift();
   const b = pool.shift();
   currentPair = [a,b];
-  img1.src = a;
-  img2.src = b;
-  status.textContent = '别犹豫，你对谁最心动？';
+  img1.src=a;
+  img2.src=b;
+  status.textContent='别犹豫，你对谁最心动？';
 
   if(reviveFlashNext){
     const flashImg = (a===lastLoser)? img1 : (b===lastLoser)? img2 : null;
@@ -119,17 +136,18 @@ function nextPair(){
 function selectImage(idx){
   const winner = currentPair[idx];
   const loser = currentPair[1-idx];
-  winnersPool.push(winner); // 胜者进入赢家池
+  nextRoundQueue.push(winner);
   lastLoser = loser;
 
-  // streak 记录同一个人连续胜利次数
+  updateWinnersPoolDisplay();
+
+  // streak 记录连续胜利
   if(streakPlayer===winner){
     streak++;
   } else {
     streak=1;
     streakPlayer=winner;
   }
-
   status.textContent=`已经连续 ${streak} 次为她心动了 💓`;
   if([10,20,30].includes(streak)) confettiEffect(80);
   if(!reviveUsed) reviveBtn.style.display='inline';
@@ -140,7 +158,7 @@ function selectImage(idx){
 // ===== 复活按钮 =====
 reviveBtn.onclick = ()=>{
   if(lastLoser && !reviveUsed){
-    pool.unshift(lastLoser); // 优先出场
+    pool.unshift(lastLoser);
     reviveUsed=true;
     reviveBtn.style.display='none';
     reviveFlashNext=true;
@@ -155,6 +173,7 @@ function showChampion(img){
   img2.style.display='none';
   reviveBtn.style.display='none';
   status.style.display='none';
+  winnersPoolDiv.style.display='none';
   winnerBanner.style.display='block';
   winnerBanner.innerHTML='🎉 原来她一直都是你的心选姐 🎉<br>';
   const c = document.createElement('img');
