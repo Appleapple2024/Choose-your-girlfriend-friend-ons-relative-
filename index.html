@@ -23,20 +23,29 @@ body {
   flex: 1;
   display: flex;
   flex-direction: column;
-  max-height: calc(100vh - 20px);
-  padding: 10px;
+  padding: 15px;
+  max-width: 1200px;
+  margin: 0 auto;
+  width: 100%;
 }
 
 h1 {
-  margin: 10px 0;
+  margin: 10px 0 5px;
   font-size: 1.8em;
   flex-shrink: 0;
+  color: #ff6b9d;
+  text-shadow: 1px 1px 2px rgba(0,0,0,0.1);
 }
 
 #status {
-  margin: 10px 0;
-  font-size: 1.1em;
+  margin: 10px 0 15px;
+  font-size: 1.2em;
   flex-shrink: 0;
+  min-height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #555;
 }
 
 .images-container {
@@ -44,18 +53,19 @@ h1 {
   display: flex;
   justify-content: center;
   align-items: center;
-  gap: 10px;
-  min-height: 0; /* 重要：防止图片撑开容器 */
+  gap: 15px;
   padding: 10px;
+  min-height: 350px;
+  max-height: 60vh;
 }
 
 .image-wrapper {
   flex: 1;
-  height: 100%;
-  max-width: 48%;
   display: flex;
   justify-content: center;
   align-items: center;
+  height: 100%;
+  min-height: 300px;
 }
 
 img {
@@ -66,22 +76,39 @@ img {
   object-fit: contain;
   cursor: pointer;
   border: 3px solid #ddd;
-  border-radius: 14px;
+  border-radius: 12px;
   transition: all 0.25s;
   background: #fff;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+  box-shadow: 0 3px 10px rgba(0,0,0,0.1);
+}
+
+/* 确保两张图片的容器和图片本身大小完全一致 */
+.image-wrapper, 
+#img1, 
+#img2 {
+  width: 45vw;
+  max-width: 400px;
+  height: 45vw;
+  max-height: 400px;
+  min-width: 250px;
+  min-height: 250px;
+}
+
+#img1, #img2 {
+  object-fit: cover; /* 改成cover让图片填满容器，大小更一致 */
 }
 
 img:hover {
   transform: scale(1.03);
   border-color: hotpink;
-  box-shadow: 0 4px 16px rgba(0,0,0,0.15);
+  box-shadow: 0 5px 15px rgba(255,105,180,0.2);
 }
 
 .controls {
   flex-shrink: 0;
-  margin: 10px 0;
+  margin: 15px 0;
   padding: 10px;
+  min-height: 60px;
 }
 
 #winnerBanner {
@@ -93,17 +120,21 @@ img:hover {
 #reviveBtn {
   display: none;
   margin: 10px auto;
-  padding: 10px 22px;
+  padding: 12px 25px;
   font-size: 1em;
   cursor: pointer;
-  border-radius: 20px;
+  border-radius: 25px;
   border: none;
   background: linear-gradient(135deg, #ffb6c1, #ffd1dc);
-  transition: transform 0.2s;
+  transition: all 0.3s;
+  color: #333;
+  font-weight: 500;
+  box-shadow: 0 3px 8px rgba(255,182,193,0.3);
 }
 
 #reviveBtn:hover {
-  transform: scale(1.05);
+  transform: translateY(-2px);
+  box-shadow: 0 5px 15px rgba(255,182,193,0.4);
 }
 
 .confetti {
@@ -132,56 +163,100 @@ img:hover {
 }
 
 .winner-image {
-  max-width: 50%;
-  max-height: 60vh;
+  max-width: 300px;
+  max-height: 300px;
   border: 6px solid gold !important;
   border-radius: 18px;
   margin: 20px auto;
+  object-fit: cover;
+  width: 100%;
+  height: auto;
 }
 
 @media (max-width: 768px) {
+  .container {
+    padding: 10px;
+  }
+  
   h1 {
     font-size: 1.5em;
-    margin: 5px 0;
+    margin: 8px 0 3px;
   }
   
   #status {
     font-size: 1em;
-    margin: 5px 0;
+    margin: 8px 0 12px;
+    min-height: 35px;
   }
   
   .images-container {
-    flex-direction: column;
-    gap: 8px;
+    flex-direction: row; /* 保持横排 */
+    gap: 10px;
+    padding: 8px;
+    min-height: 280px;
+    max-height: 50vh;
   }
   
-  .image-wrapper {
-    max-width: 90%;
-    max-height: 45%;
+  .image-wrapper, 
+  #img1, 
+  #img2 {
+    width: 42vw;
+    height: 42vw;
+    min-width: 180px;
+    min-height: 180px;
   }
   
-  .winner-image {
-    max-width: 80%;
+  .controls {
+    margin: 12px 0;
+    min-height: 50px;
+  }
+  
+  #reviveBtn {
+    padding: 10px 20px;
+    font-size: 0.9em;
   }
 }
 
-@media (max-height: 700px) {
-  .container {
-    padding: 5px;
+@media (max-width: 500px) {
+  .images-container {
+    flex-direction: column; /* 竖屏时改为竖排 */
+    gap: 10px;
   }
   
+  .image-wrapper, 
+  #img1, 
+  #img2 {
+    width: 80vw;
+    height: 80vw;
+    max-width: none;
+    max-height: none;
+    min-width: 200px;
+    min-height: 200px;
+  }
+}
+
+@media (max-height: 600px) {
   h1 {
-    font-size: 1.5em;
+    font-size: 1.4em;
     margin: 5px 0;
   }
   
   #status {
     font-size: 0.9em;
-    margin: 5px 0;
+    margin: 5px 0 8px;
+    min-height: 30px;
   }
   
   .images-container {
-    padding: 5px;
+    min-height: 250px;
+    max-height: 45vh;
+  }
+  
+  .image-wrapper, 
+  #img1, 
+  #img2 {
+    min-width: 180px;
+    min-height: 180px;
   }
 }
 </style>
@@ -312,12 +387,6 @@ function selectNextPair() {
   img2.src = currentPair[1];
   img1.style.display = 'block';
   img2.style.display = 'block';
-  
-  // 预加载图片以确保尺寸准确
-  [img1, img2].forEach(img => {
-    const image = new Image();
-    image.src = img.src;
-  });
   
   // 显示复活按钮
   if (lastLoser && !reviveUsed) {
