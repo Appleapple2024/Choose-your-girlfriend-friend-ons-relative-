@@ -17,98 +17,75 @@ body {
   min-height: 100vh;
   display: flex;
   flex-direction: column;
-}
-
-.container {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  padding: 15px;
-  max-width: 1200px;
-  margin: 0 auto;
-  width: 100%;
+  padding: 10px;
 }
 
 h1 {
-  margin: 10px 0 5px;
+  margin: 5px 0 8px;
   font-size: 1.8em;
-  flex-shrink: 0;
   color: #ff6b9d;
   text-shadow: 1px 1px 2px rgba(0,0,0,0.1);
 }
 
 #status {
-  margin: 10px 0 15px;
+  margin: 0 0 15px;
   font-size: 1.2em;
-  flex-shrink: 0;
   min-height: 40px;
   display: flex;
   align-items: center;
   justify-content: center;
   color: #555;
+  padding: 5px;
 }
 
 .images-container {
-  flex: 1;
   display: flex;
   justify-content: center;
   align-items: center;
   gap: 15px;
-  padding: 10px;
-  min-height: 350px;
-  max-height: 60vh;
+  margin: 10px 0;
+  flex: 1;
+  min-height: 300px;
+  max-height: 55vh;
 }
 
 .image-wrapper {
-  flex: 1;
+  width: 40%;
+  max-width: 300px;
+  height: 40vw;
+  max-height: 300px;
+  min-width: 150px;
+  min-height: 150px;
   display: flex;
   justify-content: center;
   align-items: center;
-  height: 100%;
-  min-height: 300px;
+  border: 2px solid #eee;
+  border-radius: 12px;
+  background: #fff;
+  padding: 5px;
+  box-shadow: 0 3px 10px rgba(0,0,0,0.08);
 }
 
 img {
-  max-width: 100%;
-  max-height: 100%;
-  width: auto;
-  height: auto;
+  width: 100%;
+  height: 100%;
   object-fit: contain;
   cursor: pointer;
-  border: 3px solid #ddd;
-  border-radius: 12px;
+  border-radius: 8px;
   transition: all 0.25s;
-  background: #fff;
-  box-shadow: 0 3px 10px rgba(0,0,0,0.1);
-}
-
-/* 确保两张图片的容器和图片本身大小完全一致 */
-.image-wrapper, 
-#img1, 
-#img2 {
-  width: 45vw;
-  max-width: 400px;
-  height: 45vw;
-  max-height: 400px;
-  min-width: 250px;
-  min-height: 250px;
-}
-
-#img1, #img2 {
-  object-fit: cover; /* 改成cover让图片填满容器，大小更一致 */
 }
 
 img:hover {
-  transform: scale(1.03);
+  transform: scale(1.05);
   border-color: hotpink;
-  box-shadow: 0 5px 15px rgba(255,105,180,0.2);
 }
 
 .controls {
-  flex-shrink: 0;
   margin: 15px 0;
-  padding: 10px;
   min-height: 60px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
 }
 
 #winnerBanner {
@@ -120,10 +97,10 @@ img:hover {
 #reviveBtn {
   display: none;
   margin: 10px auto;
-  padding: 12px 25px;
+  padding: 10px 22px;
   font-size: 1em;
   cursor: pointer;
-  border-radius: 25px;
+  border-radius: 20px;
   border: none;
   background: linear-gradient(135deg, #ffb6c1, #ffd1dc);
   transition: all 0.3s;
@@ -163,123 +140,119 @@ img:hover {
 }
 
 .winner-image {
-  max-width: 300px;
-  max-height: 300px;
+  max-width: 250px;
+  max-height: 250px;
   border: 6px solid gold !important;
   border-radius: 18px;
-  margin: 20px auto;
-  object-fit: cover;
+  margin: 15px auto;
+  object-fit: contain;
   width: 100%;
   height: auto;
 }
 
 @media (max-width: 768px) {
-  .container {
-    padding: 10px;
+  body {
+    padding: 8px;
   }
   
   h1 {
     font-size: 1.5em;
-    margin: 8px 0 3px;
+    margin: 3px 0 5px;
   }
   
   #status {
     font-size: 1em;
-    margin: 8px 0 12px;
+    margin: 0 0 10px;
     min-height: 35px;
   }
   
   .images-container {
-    flex-direction: row; /* 保持横排 */
     gap: 10px;
-    padding: 8px;
-    min-height: 280px;
+    margin: 5px 0;
+    min-height: 250px;
     max-height: 50vh;
   }
   
-  .image-wrapper, 
-  #img1, 
-  #img2 {
-    width: 42vw;
-    height: 42vw;
-    min-width: 180px;
-    min-height: 180px;
+  .image-wrapper {
+    width: 45%;
+    max-width: 250px;
+    height: 45vw;
+    max-height: 250px;
+    min-width: 130px;
+    min-height: 130px;
   }
   
   .controls {
-    margin: 12px 0;
+    margin: 10px 0;
     min-height: 50px;
   }
   
   #reviveBtn {
-    padding: 10px 20px;
+    padding: 8px 18px;
     font-size: 0.9em;
   }
 }
 
-@media (max-width: 500px) {
+@media (max-width: 480px) {
   .images-container {
-    flex-direction: column; /* 竖屏时改为竖排 */
-    gap: 10px;
+    flex-direction: column;
+    gap: 15px;
+    min-height: 400px;
+    max-height: 65vh;
   }
   
-  .image-wrapper, 
-  #img1, 
-  #img2 {
-    width: 80vw;
-    height: 80vw;
-    max-width: none;
-    max-height: none;
-    min-width: 200px;
-    min-height: 200px;
+  .image-wrapper {
+    width: 80%;
+    height: 40vh;
+    max-width: 280px;
+    max-height: 280px;
+    min-width: 180px;
+    min-height: 180px;
   }
 }
 
-@media (max-height: 600px) {
+@media (max-height: 700px) {
   h1 {
     font-size: 1.4em;
-    margin: 5px 0;
+    margin: 2px 0 4px;
   }
   
   #status {
-    font-size: 0.9em;
-    margin: 5px 0 8px;
+    font-size: 1em;
+    margin: 0 0 8px;
     min-height: 30px;
   }
   
   .images-container {
-    min-height: 250px;
+    min-height: 220px;
     max-height: 45vh;
   }
   
-  .image-wrapper, 
-  #img1, 
-  #img2 {
-    min-width: 180px;
-    min-height: 180px;
+  .image-wrapper {
+    min-width: 120px;
+    min-height: 120px;
+    max-height: 220px;
   }
 }
 </style>
 </head>
 <body>
 
-<div class="container">
-  <h1>💗 心动淘汰赛 💗</h1>
-  <div id="status">来吧，第一眼——你对谁最心动？</div>
-  
-  <div class="images-container">
-    <div class="image-wrapper">
-      <img id="img1" src="">
-    </div>
-    <div class="image-wrapper">
-      <img id="img2" src="">
-    </div>
+<h1>💗 心动淘汰赛 💗</h1>
+<div id="status">来吧，第一眼——你对谁最心动？</div>
+
+<div class="images-container">
+  <div class="image-wrapper">
+    <img id="img1" src="">
   </div>
-  
-  <div class="controls">
-    <button id="reviveBtn">等等我反悔了，再给她一次机会 😭</button>
-    <div id="winnerBanner"></div>
+  <div class="image-wrapper">
+    <img id="img2" src="">
   </div>
+</div>
+
+<div class="controls">
+  <button id="reviveBtn">等等我反悔了，再给她一次机会 😭</button>
+  <div id="winnerBanner"></div>
 </div>
 
 <audio id="bgMusic" loop>
